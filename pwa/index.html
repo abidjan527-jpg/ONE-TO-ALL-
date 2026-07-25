@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0d1117">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="One-to-All">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+  <title>One-to-All — AI Gateway</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface-2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #7d8590;
+      --accent: #58a6ff;
+      --accent-2: #3fb950;
+      --user-bubble: #1f6feb22;
+      --ai-bubble: #161b22;
+      --danger: #f85149;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Header */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+    .logo {
+      font-size: 24px;
+    }
+    header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      flex: 1;
+    }
+    .model-selector {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+      max-width: 160px;
+    }
+    /* Chat area */
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .msg {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 15px;
+      line-height: 1.5;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: var(--user-bubble);
+      border: 1px solid #1f6feb55;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.ai {
+      align-self: flex-start;
+      background: var(--ai-bubble);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+    .msg.ai .model-tag {
+      font-size: 11px;
+      color: var(--accent);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+    .msg .thinking {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: none;
+    }
+    .msg .thinking.visible { display: block; }
+    .typing {
+      align-self: flex-start;
+      padding: 12px 16px;
+      background: var(--ai-bubble);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    .typing span {
+      animation: blink 1.4s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%, 60%, 100% { opacity: 0.3; } 30% { opacity: 1; } }
+    /* Input bar */
+    .input-bar {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      flex-shrink: 0;
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+    }
+    #input {
+      flex: 1;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 16px;
+      border-radius: 24px;
+      font-size: 15px;
+      outline: none;
+      resize: none;
+      max-height: 120px;
+      min-height: 44px;
+      line-height: 1.4;
+      font-family: inherit;
+    }
+    #input:focus { border-color: var(--accent); }
+    #send {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: opacity 0.2s;
+    }
+    #send:disabled { opacity: 0.5; }
+    #send:active { transform: scale(0.92); }
+    /* Welcome screen */
+    .welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 40px;
+      text-align: center;
+    }
+    .welcome .logo-big { font-size: 64px; }
+    .welcome h2 { font-size: 22px; }
+    .welcome p { color: var(--text-muted); font-size: 15px; max-width: 300px; }
+    .suggestions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      width: 100%;
+      max-width: 360px;
+      margin-top: 12px;
+    }
+    .suggestion {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      cursor: pointer;
+      text-align: left;
+    }
+    .suggestion:active { background: var(--surface-2); }
+    /* Scrollbar */
+    #chat::-webkit-scrollbar { width: 4px; }
+    #chat::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    /* Install banner */
+    #install-banner {
+      display: none;
+      background: var(--surface-2);
+      border-top: 1px solid var(--accent);
+      padding: 10px 16px;
+      font-size: 13px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    #install-banner.show { display: flex; }
+    #install-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 6px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    /* Error */
+    .error-msg {
+      align-self: center;
+      color: var(--danger);
+      font-size: 13px;
+      padding: 8px 16px;
+      background: #f8514911;
+      border-radius: 12px;
+      border: 1px solid #f8514933;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="logo">🤖</span>
+    <h1>One-to-All</h1>
+    <select class="model-selector" id="model-select">
+      <option value="openai/gpt-4o">GPT-4o</option>
+      <option value="openai/gpt-4o-mini">GPT-4o mini</option>
+      <option value="openai/gpt-4.1">GPT-4.1</option>
+      <option value="openai/gpt-4.1-mini">GPT-4.1 mini</option>
+      <option value="openai/gpt-4.1-nano">GPT-4.1 nano</option>
+      <option value="openai/gpt-5-mini">GPT-5 mini</option>
+      <option value="openai/gpt-5-nano">GPT-5 nano</option>
+      <option value="openai/o4-mini">o4-mini</option>
+      <option value="deepseek/deepseek-r1">DeepSeek R1</option>
+      <option value="deepseek/deepseek-v3-0324">DeepSeek V3</option>
+      <option value="meta/llama-4-scout-17b-16e-instruct">Llama 4 Scout</option>
+      <option value="meta/llama-4-maverick-17b-128e-instruct-fp8">Llama 4 Maverick</option>
+      <option value="meta/llama-3.3-70b-instruct">Llama 3.3 70B</option>
+      <option value="meta/meta-llama-3.1-405b-instruct">Llama 3.1 405B</option>
+      <option value="meta/meta-llama-3.1-8b-instruct">Llama 3.1 8B</option>
+      <option value="mistral-ai/mistral-medium-2505">Mistral Medium</option>
+      <option value="mistral-ai/mistral-small-2503">Mistral Small</option>
+      <option value="mistral-ai/codestral-2501">Codestral</option>
+      <option value="mistral-ai/ministral-3b">Ministral 3B</option>
+      <option value="microsoft/phi-4">Phi-4</option>
+      <option value="microsoft/phi-4-reasoning">Phi-4 Reasoning</option>
+      <option value="microsoft/phi-4-mini-instruct">Phi-4 Mini</option>
+      <option value="cohere/cohere-command-a">Cohere Cmd A</option>
+    </select>
+  </header>
+
+  <div id="install-banner">
+    <span>📱 Install One-to-All as an app for quick access</span>
+    <button id="install-btn">Install</button>
+  </div>
+
+  <div id="chat">
+    <div class="welcome" id="welcome">
+      <div class="logo-big">🤖</div>
+      <h2>One-to-All</h2>
+      <p>Unified AI gateway — 37+ models, one token, zero API keys. Powered by GitHub Models.</p>
+      <div class="suggestions">
+        <div class="suggestion" onclick="sendSuggestion('Explain quantum computing in simple terms')">🔬 Explain quantum computing</div>
+        <div class="suggestion" onclick="sendSuggestion('Write a Python function to check if a string is a palindrome')">💻 Write a palindrome checker</div>
+        <div class="suggestion" onclick="sendSuggestion('What are the latest trends in AI?')">🧠 Latest AI trends</div>
+        <div class="suggestion" onclick="sendSuggestion('Translate hello to 10 languages')">🌍 Translate hello ×10</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-bar">
+    <textarea id="input" placeholder="Message any AI model..." rows="1" autocomplete="off"></textarea>
+    <button id="send" onclick="send()">↑</button>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+    const modelSelect = document.getElementById('model-select');
+    const welcome = document.getElementById('welcome');
+    let conversationHistory = [];
+    let isStreaming = false;
+
+    // Auto-resize textarea
+    input.addEventListener('input', () => {
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+    });
+
+    // Send on Enter (without Shift)
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        send();
+      }
+    });
+
+    function sendSuggestion(text) {
+      input.value = text;
+      send();
+    }
+
+    async function send() {
+      const text = input.value.trim();
+      if (!text || isStreaming) return;
+
+      // Hide welcome
+      if (welcome) welcome.style.display = 'none';
+
+      const model = modelSelect.value;
+      const modelLabel = modelSelect.options[modelSelect.selectedIndex].text;
+
+      // Add user message
+      addMessage('user', text);
+      conversationHistory.push({ role: 'user', content: text });
+
+      // Clear input
+      input.value = '';
+      input.style.height = 'auto';
+
+      // Show typing
+      isStreaming = true;
+      sendBtn.disabled = true;
+      const typingEl = document.createElement('div');
+      typingEl.className = 'typing';
+      typingEl.innerHTML = '<span>●</span><span>●</span><span>●</span>';
+      chat.appendChild(typingEl);
+      scrollToBottom();
+
+      try {
+        const res = await fetch(`${API_BASE}/api/functions/chatCompletion`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model,
+            messages: conversationHistory,
+            max_tokens: 2000,
+            temperature: 0.7,
+          }),
+        });
+
+        const data = await res.json();
+
+        // Remove typing
+        typingEl.remove();
+
+        if (data.error) {
+          const errEl = document.createElement('div');
+          errEl.className = 'error-msg';
+          errEl.textContent = data.error + (data.message ? ': ' + data.message : '');
+          chat.appendChild(errEl);
+          setTimeout(() => errEl.remove(), 5000);
+        } else {
+          const aiText = data.choices?.[0]?.message?.content || 'No response';
+          const thinking = data.choices?.[0]?.message?.reasoning_content || '';
+
+          const msgEl = addMessage('ai', aiText, modelLabel);
+          if (thinking) {
+            const thinkEl = msgEl.querySelector('.thinking');
+            thinkEl.textContent = '💭 ' + thinking;
+            thinkEl.classList.add('visible');
+          }
+
+          conversationHistory.push({ role: 'assistant', content: aiText });
+        }
+      } catch (err) {
+        typingEl.remove();
+        const errEl = document.createElement('div');
+        errEl.className = 'error-msg';
+        errEl.textContent = 'Connection error: ' + err.message;
+        chat.appendChild(errEl);
+        setTimeout(() => errEl.remove(), 5000);
+      }
+
+      isStreaming = false;
+      sendBtn.disabled = false;
+      input.focus();
+    }
+
+    function addMessage(role, text, modelLabel = '') {
+      const el = document.createElement('div');
+      el.className = `msg ${role}`;
+      if (role === 'ai') {
+        el.innerHTML = `<div class="model-tag">${modelLabel}</div><div class="thinking"></div>${escapeHtml(text)}`;
+      } else {
+        el.textContent = text;
+      }
+      chat.appendChild(el);
+      scrollToBottom();
+      return el;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function scrollToBottom() {
+      setTimeout(() => chat.scrollTop = chat.scrollHeight, 50);
+    }
+
+    // PWA Install
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('install-banner').classList.add('show');
+    });
+
+    document.getElementById('install-btn').addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      document.getElementById('install-banner').classList.remove('show');
+    });
+
+    // Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
