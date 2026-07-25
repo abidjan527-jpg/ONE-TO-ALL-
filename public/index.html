@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Share apps, links, videos, images, and AI models in one unified platform">
+  <meta name="theme-color" content="#1e40af">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="One-to-All">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" href="/icons/icon-192x192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+  <title>One-to-All - Share Everything</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --primary: #1e40af; --primary-light: #3b82f6; --primary-dark: #1e3a8a; --success: #10b981; --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb; --gray-500: #6b7280; --gray-600: #4b5563; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827; }
+    html, body { width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--gray-50); color: var(--gray-900); }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+    header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; padding: 16px 0; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    header .container { display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-size: 24px; font-weight: bold; }
+    nav { display: flex; gap: 20px; align-items: center; }
+    nav a, nav button { color: white; text-decoration: none; cursor: pointer; background: none; border: none; font-size: 16px; transition: opacity 0.2s; }
+    nav a:hover { opacity: 0.8; }
+    .install-btn { background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); }
+    main { padding: 32px 0; min-height: calc(100vh - 200px); }
+    .hero { text-align: center; padding: 48px 16px; background: linear-gradient(135deg, var(--gray-50) 0%, var(--gray-100) 100%); border-radius: 12px; margin-bottom: 48px; }
+    .hero h1 { font-size: 48px; color: var(--primary); margin-bottom: 16px; }
+    .hero p { font-size: 18px; color: var(--gray-600); margin-bottom: 24px; }
+    .cta-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .btn { padding: 12px 32px; font-size: 16px; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s; font-weight: 600; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 8px 16px rgba(30,64,175,0.3); }
+    .btn-secondary { background: white; color: var(--primary); border: 2px solid var(--primary); }
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 48px; }
+    .feature-card { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s; }
+    .feature-card:hover { transform: translateY(-4px); }
+    .feature-icon { font-size: 40px; margin-bottom: 16px; }
+    .feature-card h3 { font-size: 20px; margin-bottom: 8px; color: var(--primary); }
+    .content-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .content-item { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s; cursor: pointer; }
+    .content-item:hover { transform: scale(1.02); }
+    .content-thumbnail { width: 100%; height: 150px; background: var(--gray-200); display: flex; align-items: center; justify-content: center; font-size: 48px; }
+    .content-info { padding: 12px; }
+    .content-info h4 { font-size: 14px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .content-info p { font-size: 12px; color: var(--gray-500); }
+    .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+    .modal.active { display: flex; align-items: center; justify-content: center; }
+    .modal-content { background: white; padding: 32px; border-radius: 12px; max-width: 600px; width: 95%; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .modal-header h2 { font-size: 24px; color: var(--primary); }
+    .close-btn { background: none; border: none; font-size: 28px; cursor: pointer; color: var(--gray-500); }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--gray-700); }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 14px; font-family: inherit; }
+    .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--primary); }
+    .file-upload { border: 2px dashed var(--primary-light); border-radius: 8px; padding: 32px; text-align: center; cursor: pointer; background: var(--gray-50); }
+    .file-upload:hover { background: var(--gray-100); border-color: var(--primary); }
+    .file-upload.dragover { background: var(--primary); color: white; }
+    .tabs { display: flex; gap: 8px; border-bottom: 2px solid var(--gray-200); margin-bottom: 24px; overflow-x: auto; }
+    .tab-btn { padding: 12px 20px; background: none; border: none; cursor: pointer; font-weight: 600; color: var(--gray-500); border-bottom: 2px solid transparent; margin-bottom: -2px; }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    footer { background: var(--gray-800); color: white; padding: 32px 0; text-align: center; margin-top: 48px; }
+    footer a { color: var(--primary-light); text-decoration: none; }
+    @media (max-width: 768px) { .hero h1 { font-size: 32px; } .cta-buttons { flex-direction: column; } .btn { width: 100%; } .modal-content { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <div class="logo">🌐 One-to-All</div>
+      <nav>
+        <a href="/">Home</a>
+        <a href="#shared">Shared</a>
+        <button class="install-btn" id="installBtn" style="display:none;">📱 Install</button>
+        <button id="menuBtn">☰</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="container">
+      <section class="hero">
+        <h1>Share Everything, Everywhere</h1>
+        <p>Upload apps, links, videos, images, and files. Access them instantly from any device. All in one place.</p>
+        <div class="cta-buttons">
+          <button class="btn btn-primary" id="uploadBtn">📤 Upload Content</button>
+          <button class="btn btn-secondary" id="browseBtn">🔍 Browse</button>
+        </div>
+      </section>
+
+      <section>
+        <h2 style="text-align: center; margin-bottom: 32px; font-size: 32px;">Why One-to-All?</h2>
+        <div class="features">
+          <div class="feature-card"><div class="feature-icon">📱</div><h3>Works Everywhere</h3><p>Install on iOS, Android, Mac, Windows, or use in your browser.</p></div>
+          <div class="feature-card"><div class="feature-icon">🚀</div><h3>Lightning Fast</h3><p>Built with modern web technology. Instant loading and smooth performance.</p></div>
+          <div class="feature-card"><div class="feature-icon">🔒</div><h3>Secure & Private</h3><p>Your data is encrypted and stored securely.</p></div>
+          <div class="feature-card"><div class="feature-icon">🤖</div><h3>AI-Powered</h3><p>Access multiple AI models in one place.</p></div>
+          <div class="feature-card"><div class="feature-icon">🌍</div><h3>Easy Sharing</h3><p>Share content with anyone via links.</p></div>
+          <div class="feature-card"><div class="feature-icon">⚡</div><h3>Offline Ready</h3><p>Access offline. Syncs when you're back online.</p></div>
+        </div>
+      </section>
+
+      <section id="shared" style="margin-top: 48px;">
+        <h2 style="margin-bottom: 24px; font-size: 28px;">Recent Shared Content</h2>
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="all">All</button>
+          <button class="tab-btn" data-tab="links">Links</button>
+          <button class="tab-btn" data-tab="images">Images</button>
+          <button class="tab-btn" data-tab="videos">Videos</button>
+          <button class="tab-btn" data-tab="apps">Apps</button>
+          <button class="tab-btn" data-tab="files">Files</button>
+        </div>
+        <div class="content-grid" id="contentGrid"></div>
+      </section>
+    </div>
+  </main>
+
+  <div class="modal" id="uploadModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Upload Content</h2>
+        <button class="close-btn" id="closeUploadBtn">×</button>
+      </div>
+      <form id="uploadForm">
+        <div class="form-group">
+          <label>Content Type</label>
+          <select id="contentType" required>
+            <option value="">Select type...</option>
+            <option value="app">App Link</option>
+            <option value="link">Website Link</option>
+            <option value="image">Image</option>
+            <option value="video">Video</option>
+            <option value="file">File</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="title" placeholder="Enter title" required>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="description" placeholder="Enter description"></textarea>
+        </div>
+        <div id="linkInput" class="form-group" style="display:none;">
+          <label>URL</label>
+          <input type="url" id="url" placeholder="https://example.com">
+        </div>
+        <div id="fileInputDiv" class="form-group" style="display:none;">
+          <label>Upload File</label>
+          <div class="file-upload" id="fileUploadArea">
+            <div style="font-size: 48px; margin-bottom: 12px;">📁</div>
+            <p><strong>Click to upload or drag and drop</strong></p>
+            <p style="color: var(--gray-500); font-size: 12px;">Max size: 100MB</p>
+          </div>
+          <input type="file" id="fileInputField" multiple style="display:none;">
+        </div>
+        <div class="form-group">
+          <label>Tags (comma separated)</label>
+          <input type="text" id="tags" placeholder="e.g., productivity, design, ai">
+        </div>
+        <div class="form-group">
+          <label><input type="checkbox" id="isPublic" checked> Make public (shareable)</label>
+        </div>
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <button type="button" class="btn btn-secondary" id="cancelUploadBtn" style="flex: 1;">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="flex: 1;">Upload</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    <div class="container">
+      <p><strong>One-to-All</strong> - Share Everything, Everywhere</p>
+      <p style="font-size: 14px; color: #9ca3af;">Made with ❤️ | <a href="#">Privacy</a> | <a href="#">Terms</a> | <a href="#">Contact</a></p>
+      <p style="font-size: 12px; color: #6b7280; margin-top: 16px;">© 2026 One-to-All. Ready for Hostinger, AWS, or any hosting.</p>
+    </div>
+  </footer>
+
+  <script src="/sw-register.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
